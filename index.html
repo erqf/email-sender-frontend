@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SendEmailNow</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a2e;
+            background-image: linear-gradient(145deg, #16213e 0%, #0f3460 50%, #1a1a2e 100%);
+        }
+        .logo-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .bg-discord { background-color: #5865F2; }
+        .text-discord { color: #5865F2; }
+        .border-discord { border-color: #5865F2; }
+        .glassmorphism {
+            background: rgba(26, 26, 46, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .email-chip {
+            display: inline-flex; align-items: center; background-color: #5865F2;
+            color: white; border-radius: 9999px; padding: 4px 12px; margin: 4px;
+            font-size: 14px; font-weight: 500;
+        }
+        .email-chip button {
+            margin-left: 8px; background: none; border: none; color: white;
+            cursor: pointer; font-size: 16px; line-height: 1; opacity: 0.7; transition: opacity 0.2s;
+        }
+        .email-chip button:hover { opacity: 1; }
+        .glow-on-hover {
+            box-shadow: 0 0 5px #5865F2, 0 0 10px #5865F2, 0 0 15px #5865F2;
+            transition: all 0.3s ease-in-out;
+        }
+        .glow-on-hover:hover {
+            box-shadow: 0 0 20px #5865F2, 0 0 30px #5865F2, 0 0 40px #5865F2;
+        }
+        .sender-btn {
+            transition: all 0.3s ease;
+        }
+        .sender-btn.active {
+            background-color: #5865F2;
+            color: white;
+            box-shadow: 0 0 15px rgba(88, 101, 242, 0.7);
+        }
+        .sender-btn.inactive {
+            background-color: rgba(79, 84, 92, 0.3);
+            color: #b9bbbe;
+        }
+        #info-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        #info-icon-container:hover #info-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-gray-200 antialiased min-h-screen flex items-center justify-center p-4">
+
+    <div id="login-screen" class="w-full max-w-md text-center">
+        <div class="glassmorphism p-10 rounded-2xl">
+            <h1 class="text-4xl font-bold mb-4 logo-font text-white">SendEmailNow</h1>
+            <p class="text-gray-300 mb-8 text-lg">Automate your email messages.</p>
+            <button id="login-button" class="w-full bg-discord text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-all duration-300 transform hover:scale-105 text-lg glow-on-hover">
+                <i class="fab fa-discord mr-3 text-2xl"></i>
+                Login with Discord
+            </button>
+        </div>
+    </div>
+
+    <div id="dashboard-screen" class="hidden w-full max-w-4xl">
+        <div class="glassmorphism p-6 sm:p-8 rounded-2xl">
+            <header class="flex flex-col sm:flex-row justify-between items-center pb-6 border-b border-gray-700/50 mb-6 gap-4">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold logo-font text-white mr-6">SendEmailNow</h1>
+                    <div class="flex items-center">
+                        <img id="user-avatar" src="https://placehold.co/48x48/5865F2/ffffff?text=U" alt="Discord Avatar" class="w-10 h-10 rounded-full mr-3 border-2 border-discord">
+                        <div>
+                            <p class="text-xs text-gray-400">Logged in as</p>
+                            <h2 id="user-name" class="text-md font-bold text-white">User#1234</h2>
+                        </div>
+                    </div>
+                </div>
+                <button id="logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 w-full sm:w-auto">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+            </header>
+
+            <main>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4 text-white">Send Email</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="recipient-input" class="block mb-2 text-sm font-medium text-gray-300">Recipients</label>
+                                <div class="flex gap-2">
+                                    <div id="recipients-container" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2 flex flex-wrap items-center gap-1 focus-within:ring-2 focus-within:ring-discord focus-within:border-discord transition">
+                                        <input type="email" id="recipient-input" class="bg-transparent text-gray-200 flex-grow p-1 outline-none" placeholder="Add email...">
+                                    </div>
+                                    <button id="add-recipient-btn" class="bg-discord h-full px-4 rounded-lg text-white font-bold hover:bg-opacity-90 transition-all">Add</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="from-name" class="block mb-2 text-sm font-medium text-gray-300">Sender Name (Optional)</label>
+                                <input type="text" id="from-name" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2.5 text-gray-200 focus:ring-discord focus:border-discord transition" placeholder="e.g., Your Name or Company">
+                            </div>
+                            <div>
+                                <label for="subject" class="block mb-2 text-sm font-medium text-gray-300">Subject</label>
+                                <input type="text" id="subject" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2.5 text-gray-200 focus:ring-discord focus:border-discord transition" placeholder="Your message subject">
+                            </div>
+                            <div>
+                                <label for="message" class="block mb-2 text-sm font-medium text-gray-300">Message Content</label>
+                                <textarea id="message" rows="5" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2.5 text-gray-200 focus:ring-discord focus:border-discord transition" placeholder="Write your message here..."></textarea>
+                            </div>
+                            
+                            <div class="pt-2">
+                                <label class="block mb-3 text-sm font-medium text-gray-300 text-center">Send As</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <button id="send-as-user-btn" class="sender-btn p-3 rounded-lg font-semibold active">
+                                        <i class="fas fa-user mr-2"></i>My Gmail
+                                    </button>
+                                    <button id="send-as-site-btn" class="sender-btn p-3 rounded-lg font-semibold inactive">
+                                        <i class="fas fa-server mr-2"></i>Site Email
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <button id="send-button" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-all duration-300 text-lg transform hover:scale-105">
+                                <i class="fas fa-paper-plane mr-3"></i>
+                                Send to All
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="gmail-config-box" class="bg-gray-800/40 p-6 rounded-lg border border-gray-700/50 transition-opacity duration-500">
+                        <h3 class="text-xl font-bold mb-1 text-white">My Gmail Configuration</h3>
+                        <p class="text-sm text-gray-400 mb-4">Enter your credentials to send emails from your own account.</p>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="gmail-address" class="block mb-2 text-sm font-medium text-gray-300">Your Gmail Address</label>
+                                <input type="email" id="gmail-address" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2.5 text-gray-200 focus:ring-discord focus:border-discord transition" placeholder="your.email@gmail.com">
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label for="app-password" class="text-sm font-medium text-gray-300">Gmail App Password</label>
+                                    <div id="info-icon-container" class="relative">
+                                        <i class="fas fa-info-circle text-gray-400 cursor-pointer hover:text-white transition-colors"></i>
+                                        <div id="info-tooltip" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-3 bg-gray-900 rounded-lg shadow-lg text-xs text-left z-10">
+                                            <p class="font-bold mb-2">How to get an App Password:</p>
+                                            <ol class="list-decimal list-inside space-y-1">
+                                                <li>Go to your <a href="https://myaccount.google.com/security" target="_blank" class="text-discord font-semibold hover:underline">Google Account Security</a> page.</li>
+                                                <li>Make sure 2-Step Verification is ON.</li>
+                                                <li>Click on "App passwords".</li>
+                                                <li>Select "Mail" for the app and "Other (Custom name)" for the device, then generate.</li>
+                                                <li>Copy the 16-character password and paste it here.</li>
+                                            </ol>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="password" id="app-password" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2.5 text-gray-200 focus:ring-discord focus:border-discord transition" placeholder="•••• •••• •••• ••••">
+                            </div>
+                            <button id="save-config-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                                <i class="fas fa-save mr-2"></i>Save Configuration
+                            </button>
+                        </div>
+                         <div class="mt-4 p-3 bg-yellow-900/40 border border-yellow-700/50 rounded-lg text-yellow-300 text-xs">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            <strong>Security Warning:</strong> Your data is stored on the server. Never share your main passwords. Only use "App Passwords" generated from your Google account.
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div id="notification-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+        <div class="glassmorphism p-6 rounded-lg shadow-xl text-center max-w-sm w-full">
+            <p id="notification-message" class="text-lg mb-4 text-white"></p>
+            <button id="close-modal-button" class="bg-discord text-white font-bold py-2 px-6 rounded-lg">OK</button>
+        </div>
+    </div>
+
+<script>
+    const BACKEND_URL = 'http://localhost:3000';
+    const loginScreen = document.getElementById('login-screen');
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    const loginButton = document.getElementById('login-button');
+    const logoutButton = document.getElementById('logout-button');
+    const sendButton = document.getElementById('send-button');
+    const saveConfigButton = document.getElementById('save-config-button');
+    const notificationModal = document.getElementById('notification-modal');
+    const notificationMessage = document.getElementById('notification-message');
+    const closeModalButton = document.getElementById('close-modal-button');
+    const recipientsContainer = document.getElementById('recipients-container');
+    const recipientInput = document.getElementById('recipient-input');
+    const addRecipientBtn = document.getElementById('add-recipient-btn');
+    const sendAsUserBtn = document.getElementById('send-as-user-btn');
+    const sendAsSiteBtn = document.getElementById('send-as-site-btn');
+    const gmailConfigBox = document.getElementById('gmail-config-box');
+    
+    let currentUserId = null;
+    let sendAsOption = 'user';
+
+    function showNotification(message) {
+        notificationMessage.textContent = message;
+        notificationModal.classList.remove('hidden');
+    }
+    function hideNotification() {
+        notificationModal.classList.add('hidden');
+    }
+    function handleLogin() {
+        window.location.href = `${BACKEND_URL}/auth/discord`;
+    }
+    function handleLogout() {
+        currentUserId = null;
+        window.history.pushState({}, '', window.location.pathname); 
+        dashboardScreen.classList.add('hidden');
+        loginScreen.classList.remove('hidden');
+    }
+    async function saveConfiguration() {
+        if (!currentUserId) { showNotification("You must be logged in."); return; }
+        const gmailAddress = document.getElementById('gmail-address').value;
+        const appPassword = document.getElementById('app-password').value;
+        if (!gmailAddress || !appPassword) { showNotification("Please enter both Gmail address and App Password."); return; }
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/save-config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUserId, gmailAddress, appPassword })
+            });
+            const result = await response.json();
+            showNotification(result.message);
+        } catch (error) {
+            showNotification("Error: Could not communicate with the server.");
+        }
+    }
+    async function sendEmails() {
+        const emailChips = recipientsContainer.querySelectorAll('.email-chip');
+        const recipientsList = Array.from(emailChips).map(chip => chip.dataset.email);
+        const recipients = recipientsList.join(',');
+        const fromName = document.getElementById('from-name').value;
+        const subject = document.getElementById('subject').value;
+        const message = document.getElementById('message').value;
+
+        if (!currentUserId || recipientsList.length === 0 || !subject || !message) {
+            showNotification("Please fill all fields and add at least one recipient.");
+            return;
+        }
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/send-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUserId, recipients, subject, message, sendAs: sendAsOption, fromName: fromName })
+            });
+            const result = await response.json();
+            showNotification(result.message);
+        } catch (error) {
+            showNotification("Error: Could not communicate with the server.");
+        }
+    }
+    function createChip(email) {
+        if (!email || !email.includes('@')) return;
+        const chip = document.createElement('div');
+        chip.classList.add('email-chip');
+        chip.dataset.email = email;
+        const emailText = document.createElement('span');
+        emailText.textContent = email;
+        const removeBtn = document.createElement('button');
+        removeBtn.innerHTML = '&times;';
+        removeBtn.onclick = () => { chip.remove(); };
+        chip.appendChild(emailText);
+        chip.appendChild(removeBtn);
+        recipientsContainer.insertBefore(chip, recipientInput);
+    }
+    function addRecipient() {
+        const email = recipientInput.value.trim();
+        createChip(email);
+        recipientInput.value = '';
+        recipientInput.focus();
+    }
+    function updateSenderChoice(choice) {
+        sendAsOption = choice;
+        if (choice === 'user') {
+            sendAsUserBtn.classList.add('active');
+            sendAsUserBtn.classList.remove('inactive');
+            sendAsSiteBtn.classList.add('inactive');
+            sendAsSiteBtn.classList.remove('active');
+            gmailConfigBox.classList.remove('opacity-0', 'pointer-events-none');
+        } else {
+            sendAsSiteBtn.classList.add('active');
+            sendAsSiteBtn.classList.remove('inactive');
+            sendAsUserBtn.classList.add('inactive');
+            sendAsUserBtn.classList.remove('active');
+            gmailConfigBox.classList.add('opacity-0', 'pointer-events-none');
+        }
+    }
+
+    addRecipientBtn.addEventListener('click', addRecipient);
+    recipientInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addRecipient();
+        }
+    });
+    sendAsUserBtn.addEventListener('click', () => updateSenderChoice('user'));
+    sendAsSiteBtn.addEventListener('click', () => updateSenderChoice('site'));
+
+    window.onload = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('userId');
+        const username = urlParams.get('username');
+        const avatar = urlParams.get('avatar');
+        if (userId && username) {
+            currentUserId = userId;
+            loginScreen.classList.add('hidden');
+            dashboardScreen.classList.remove('hidden');
+            document.getElementById('user-name').textContent = username;
+            if (avatar && avatar !== 'null') {
+                 document.getElementById('user-avatar').src = `https://cdn.discordapp.com/avatars/${userId}/${avatar}.png`;
+            }
+        }
+    };
+    loginButton.addEventListener('click', handleLogin);
+    logoutButton.addEventListener('click', handleLogout);
+    sendButton.addEventListener('click', sendEmails);
+    saveConfigButton.addEventListener('click', saveConfiguration);
+    closeModalButton.addEventListener('click', hideNotification);
+</script>
+</body>
+</html>
