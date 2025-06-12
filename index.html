@@ -118,7 +118,7 @@
                         <h3 class="text-2xl font-bold mb-4 text-white">Send Email</h3>
                         <div class="space-y-4">
                             <div id="guest-limit-counter" class="hidden text-center font-semibold p-2 bg-yellow-900/50 border border-yellow-700 rounded-lg text-yellow-300 mb-4">
-                                Guest Site Emails Sent: <span id="guest-sent-count">0</span>/10
+                                Guest Site Emails Used Today: <span id="guest-sent-count">0</span>/10
                             </div>
                             <div>
                                 <label for="recipient-input" class="block mb-2 text-sm font-medium text-gray-300">Recipients</label>
@@ -246,10 +246,10 @@
     const sendAsSiteBtn = document.getElementById('send-as-site-btn');
     const infoIconContainer = document.getElementById('info-icon-container');
     const infoTooltip = document.getElementById('info-tooltip');
-    const configContent = document.getElementById('config-content');
     const configOverlay = document.getElementById('config-overlay');
     const guestLimitCounter = document.getElementById('guest-limit-counter');
     const guestSentCount = document.getElementById('guest-sent-count');
+    const gmailConfigBox = document.getElementById('gmail-config-box');
     
     let currentUserId = null;
     let sendAsOption = 'user';
@@ -291,14 +291,18 @@
         dashboardScreen.classList.remove('hidden');
 
         if (isGuest) {
-            updateSenderChoice('user');
+            updateSenderChoice('user'); // Gost po defaultu koristi svoj Gmail
             guestLimitCounter.classList.remove('hidden');
             document.getElementById('save-config-button').disabled = true;
             document.getElementById('save-config-button').classList.add('opacity-50', 'cursor-not-allowed');
+            gmailConfigBox.classList.add('relative'); // Osigurava da je vidljiv
         } else {
             guestLimitCounter.classList.add('hidden');
             document.getElementById('save-config-button').disabled = false;
             document.getElementById('save-config-button').classList.remove('opacity-50', 'cursor-not-allowed');
+            if (user.gmailConfig) {
+                 document.getElementById('gmail-address').value = user.gmailConfig.gmailAddress || '';
+            }
         }
     }
 
@@ -309,6 +313,7 @@
             });
             if (!response.ok) {
                 localStorage.removeItem('authToken');
+                // Ne vraćamo na login ako je token istekao, korisnik može da nastavi kao gost
                 return;
             }
             const user = await response.json();
@@ -382,7 +387,8 @@
 
             if (isGuest && sendAsOption === 'site' && response.ok) {
                  const currentCount = parseInt(guestSentCount.textContent, 10);
-                 guestSentCount.textContent = currentCount + recipientsList.length;
+                 const sentCount = recipients.split(',').length;
+                 guestSentCount.textContent = currentCount + sentCount;
             }
 
         } catch (error) {
@@ -414,6 +420,7 @@
     
     function updateSenderChoice(choice) {
         sendAsOption = choice;
+        const configBox = document.getElementById('gmail-config-box');
         if (choice === 'user') {
             sendAsUserBtn.classList.add('active');
             sendAsUserBtn.classList.remove('inactive');
@@ -453,7 +460,7 @@
 
         if (token) {
             localStorage.setItem('authToken', token);
-            window.history.pushState({}, '', window.location.pathname);
+            window.history.replaceState({}, document.title, "/");
             verifyToken(token);
         } else {
             const storedToken = localStorage.getItem('authToken');
