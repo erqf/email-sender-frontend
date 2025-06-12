@@ -59,22 +59,23 @@
             background-color: rgba(79, 84, 92, 0.3);
             color: #b9bbbe;
         }
-        /* AŽURIRAN STIL za info tooltip da radi na klik i hover */
         #info-tooltip {
             visibility: hidden;
             opacity: 0;
             transform: translateY(10px);
             transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
-            pointer-events: none; /* Sprečava da tooltip blokira druge klikove */
+            pointer-events: none;
         }
-        /* Prikazuje se na HOVER ILI kada ima 'is-active' klasu (za klik) */
         #info-icon-container:hover #info-tooltip,
         #info-tooltip.is-active {
             visibility: visible;
             opacity: 1;
             transform: translateY(0);
             transition: opacity 0.2s ease, transform 0.2s ease;
-            pointer-events: auto; /* Dozvoljava interakciju sa tooltip-om (npr. klik na link) */
+            pointer-events: auto;
+        }
+        .text-discord-hover:hover {
+            color: #7289DA;
         }
     </style>
 </head>
@@ -193,6 +194,19 @@
                     </div>
                 </div>
             </main>
+
+            <!-- NOVI FOOTER DEO -->
+            <footer class="mt-8 pt-6 border-t border-gray-700/50 flex flex-col items-center justify-center gap-5 text-center">
+                <a href="mailto:contact@exxqes.xyz" class="text-sm text-gray-400 hover:text-white transition-colors">contact@exxqes.xyz</a>
+                <a href="https://discord.gg/u3Gw38bDM8" target="_blank" class="text-4xl text-gray-400 text-discord-hover transition-colors">
+                    <i class="fab fa-discord"></i>
+                </a>
+                <p class="text-sm text-gray-500">
+                    &copy; 2025 SendEmailNow. All Rights Reserved.
+                </p>
+            </footer>
+            <!-- KRAJ FOOTER DELA -->
+
         </div>
     </div>
     
@@ -220,7 +234,6 @@
     const sendAsUserBtn = document.getElementById('send-as-user-btn');
     const sendAsSiteBtn = document.getElementById('send-as-site-btn');
     const gmailConfigBox = document.getElementById('gmail-config-box');
-    // NOVI ELEMENTI za info ikonicu
     const infoIconContainer = document.getElementById('info-icon-container');
     const infoTooltip = document.getElementById('info-tooltip');
     
@@ -352,14 +365,12 @@
     saveConfigButton.addEventListener('click', saveConfiguration);
     closeModalButton.addEventListener('click', hideNotification);
 
-    // --- NOVA LOGIKA za info ikonicu ---
     infoIconContainer.addEventListener('click', (event) => {
-        event.stopPropagation(); // Sprečava da se klik odmah prenese na 'document' i zatvori tooltip
+        event.stopPropagation();
         infoTooltip.classList.toggle('is-active');
     });
 
     document.addEventListener('click', (event) => {
-        // Ako je tooltip aktivan i klik nije unutar info kontejnera, sakrij ga
         if (infoTooltip.classList.contains('is-active') && !infoIconContainer.contains(event.target)) {
             infoTooltip.classList.remove('is-active');
         }
