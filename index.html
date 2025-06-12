@@ -1,82 +1,248 @@
+// FAJL 1: package.json
+// AKCIJA: Obriši sve iz tvog package.json fajla i nalepi ovo.
+{
+  "name": "email-sender-backend",
+  "version": "1.0.0",
+  "description": "Final Email Sender Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-fingerprint": "^1.2.2",
+    "firebase-admin": "^12.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "murmurhash3js": "^3.0.1",
+    "nodemailer": "^6.9.13"
+  }
+}
+```javascript
+// FAJL 2: server.js
+// AKCIJA: Obriši sve iz tvog server.js fajla i nalepi ovo.
+require('dotenv').config();
+const express = require('express');
+const axios = require('axios');
+const admin = require('firebase-admin');
+const nodemailer = require('nodemailer');
+const cors = require('cors');
+const Fingerprint = require('express-fingerprint');
+const jwt = require('jsonwebtoken');
+
+const app = express();
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.use(express.json());
+app.use(Fingerprint({
+    parameters:[ Fingerprint.useragent, Fingerprint.acceptHeaders, Fingerprint.geoip ]
+}));
+
+let db;
+
+// Provera ključnih "tajni" pri pokretanju
+if (!process.env.JWT_SECRET) {
+    console.error("FATAL ERROR: JWT_SECRET is not defined in your environment variables. Please add it to your hosting provider.");
+    process.exit(1);
+}
+
+try {
+    let serviceAccount;
+    if (process.env.SERVICE_ACCOUNT_KEY_JSON) {
+        serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY_JSON);
+    } else {
+        serviceAccount = require('./serviceAccountKey.json');
+    }
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    db = admin.firestore();
+    console.log("Firebase Admin SDK successfully initialized!");
+} catch (e) {
+    console.error("FATAL ERROR initializing Firebase:", e.message);
+    process.exit(1);
+}
+
+const getIp = (req) => req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+const verifyToken = (req, res, next) => {
+    const token = req.headers['x-access-token'];
+    if (!token) {
+        return res.status(403).json({ message: "No token provided." });
+    }
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ message: "Unauthorized: Invalid token." });
+        }
+        req.userId = decoded.id;
+        next();
+    });
+};
+
+app.get('/', (req, res) => {
+  res.status(200).send('Server is healthy and running!');
+});
+
+app.get('/auth/discord', (req, res) => {
+  const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.SERVER_URL + '/auth/discord/callback')}&response_type=code&scope=identify%20email`;
+  res.redirect(discordAuthUrl);
+});
+
+app.get('/auth/discord/callback', async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.status(400).send('Error: Authorization code is missing.');
+  try {
+    const tokenResponse = await axios.post('[https://discord.com/api/oauth2/token](https://discord.com/api/oauth2/token)', new URLSearchParams({
+      client_id: process.env.DISCORD_CLIENT_ID,
+      client_secret: process.env.DISCORD_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: process.env.SERVER_URL + '/auth/discord/callback'
+    }));
+    const { access_token } = tokenResponse.data;
+    const userResponse = await axios.get('[https://discord.com/api/users/@me](https://discord.com/api/users/@me)', { headers: { 'Authorization': `Bearer ${access_token}` } });
+    const discordUser = userResponse.data;
+
+    const userRef = db.collection('users').doc(discordUser.id);
+    const ip = getIp(req);
+    const fingerprint = req.fingerprint.hash;
+
+    await userRef.set({
+      username: discordUser.username,
+      avatar: discordUser.avatar,
+      email: discordUser.email,
+      last_fingerprint: fingerprint,
+      login_history: admin.firestore.FieldValue.arrayUnion({ ip, timestamp: new Date() })
+    }, { merge: true });
+
+    const token = jwt.sign({ id: discordUser.id }, process.env.JWT_SECRET, { expiresIn: 86400 });
+    
+    res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
+  } catch (error) {
+    console.error("Error during Discord authentication:", error.response ? error.response.data : error.message);
+    res.status(500).send('An error occurred during authentication.');
+  }
+});
+
+app.get('/api/verify-token', verifyToken, async (req, res) => {
+    try {
+        const userDoc = await db.collection('users').doc(req.userId).get();
+        if (!userDoc.exists) return res.status(404).json({ message: "User not found." });
+        const { username, avatar, gmailConfig } = userDoc.data();
+        res.status(200).json({ userId: req.userId, username, avatar, gmailConfig });
+    } catch(e) {
+        res.status(500).json({ message: "Server error." });
+    }
+});
+
+app.post('/api/save-config', verifyToken, async (req, res) => {
+    const { gmailAddress, appPassword } = req.body;
+    if(!req.userId || !gmailAddress || !appPassword) return res.status(400).json({ message: "Missing required data." });
+    try {
+        const userRef = db.collection('users').doc(req.userId);
+        await userRef.update({ gmailConfig: { gmailAddress, appPassword } });
+        res.status(200).json({ message: "Configuration saved successfully!" });
+    } catch (error) {
+        console.error("Error saving configuration:", error);
+        res.status(500).json({ message: "Server error while saving configuration." });
+    }
+});
+
+app.post('/api/send-email', async (req, res) => {
+    const { userId, recipients, subject, message, sendAs, fromName } = req.body;
+    const ip = getIp(req);
+    const fingerprint = req.fingerprint.hash;
+
+    if(!recipients || !subject || !message || !sendAs) return res.status(400).json({ message: "Missing required data." });
+
+    const now = admin.firestore.Timestamp.now();
+    const twentyFourHoursAgo = admin.firestore.Timestamp.fromMillis(now.toMillis() - (24 * 60 * 60 * 1000));
+    
+    if (userId === 'guest') {
+        if (sendAs === 'site') {
+            const usageRef = db.collection('guest_usage');
+            const query = usageRef.where('fingerprint', '==', fingerprint).where('timestamp', '>=', twentyFourHoursAgo);
+            const snapshot = await query.get();
+            if (snapshot.size >= 10) {
+                return res.status(429).json({ message: "Guest daily limit (10) for Site Email reached. Please try again tomorrow or log in." });
+            }
+        }
+    }
+    
+    if (userId && userId !== 'guest') {
+        const token = req.headers['x-access-token'];
+        if (!token) return res.status(403).json({ message: "No token provided for registered user." });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.id !== userId) return res.status(401).json({ message: "Token does not match user ID." });
+
+        if (sendAs === 'site') {
+            const usageRef = db.collection('user_usage');
+            const userFingerprintQuery = usageRef.where('fingerprint', '==', fingerprint).where('timestamp', '>=', twentyFourHoursAgo);
+            const userIdQuery = usageRef.where('userId', '==', userId).where('timestamp', '>=', twentyFourHoursAgo);
+            const [fingerprintSnapshot, userIdSnapshot] = await Promise.all([userFingerprintQuery.get(), userIdQuery.get()]);
+            if (fingerprintSnapshot.size >= 50 || userIdSnapshot.size >= 50) {
+                return res.status(429).json({ message: "You have reached your daily limit of 50 site emails. Please try again tomorrow." });
+            }
+        }
+    }
+    
+    try {
+        let transporter, fromAddress, finalFromName;
+        
+        if (userId && userId !== 'guest') {
+            const userDoc = await db.collection('users').doc(userId).get();
+            finalFromName = fromName || userDoc.data().username;
+        } else {
+            finalFromName = fromName || 'Guest';
+        }
+        
+        if (sendAs === 'user') {
+            const { gmailAddress, appPassword } = req.body;
+            if (!gmailAddress || !appPassword) return res.status(400).json({ message: "Gmail credentials are required for this action." });
+            transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: gmailAddress, pass: appPassword } });
+            fromAddress = gmailAddress;
+        } else {
+            transporter = nodemailer.createTransport({ host: process.env.SMTP_HOST, port: parseInt(process.env.SMTP_PORT, 10), auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
+            fromAddress = process.env.SITE_SENDER_EMAIL;
+        }
+        
+        const recipientList = recipients.split(',').map(email => email.trim());
+        for (const recipient of recipientList) {
+            await transporter.sendMail({ from: `"${finalFromName}" <${fromAddress}>`, to: recipient, subject: subject, text: message });
+        }
+
+        if (sendAs === 'site') {
+            const logCollection = userId && userId !== 'guest' ? 'user_usage' : 'guest_usage';
+            await db.collection(logCollection).add({ userId: userId || 'guest', fingerprint, ip, timestamp: now });
+        }
+        res.status(200).json({ message: `Emails sent to ${recipientList.length} recipients!` });
+    } catch (error) {
+        console.error("Error sending email:", error);
+        res.status(500).json({ message: "A server error occurred while sending emails." });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+```html
+<!-- FAJL 3: index.html -->
+<!-- AKCIJA: Obriši sve iz tvog index.html fajla i nalepi ovo. -->
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SendEmailNow</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #1a1a2e;
-            background-image: linear-gradient(145deg, #16213e 0%, #0f3460 50%, #1a1a2e 100%);
-        }
-        .logo-font {
-            font-family: 'Orbitron', sans-serif;
-        }
-        .bg-discord { background-color: #5865F2; }
-        .text-discord { color: #5865F2; }
-        .border-discord { border-color: #5865F2; }
-        .glassmorphism {
-            background: rgba(26, 26, 46, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-        .email-chip {
-            display: inline-flex; align-items: center; background-color: #5865F2;
-            color: white; border-radius: 9999px; padding: 4px 12px; margin: 4px;
-            font-size: 14px; font-weight: 500;
-        }
-        .email-chip button {
-            margin-left: 8px; background: none; border: none; color: white;
-            cursor: pointer; font-size: 16px; line-height: 1; opacity: 0.7; transition: opacity 0.2s;
-        }
-        .email-chip button:hover { opacity: 1; }
-        .glow-on-hover {
-            box-shadow: 0 0 5px #5865F2, 0 0 10px #5865F2, 0 0 15px #5865F2;
-            transition: all 0.3s ease-in-out;
-        }
-        .glow-on-hover:hover {
-            box-shadow: 0 0 20px #5865F2, 0 0 30px #5865F2, 0 0 40px #5865F2;
-        }
-        .sender-btn {
-            transition: all 0.3s ease;
-        }
-        .sender-btn.active {
-            background-color: #5865F2;
-            color: white;
-            box-shadow: 0 0 15px rgba(88, 101, 242, 0.7);
-        }
-        .sender-btn.inactive {
-            background-color: rgba(79, 84, 92, 0.3);
-            color: #b9bbbe;
-        }
-        #info-tooltip {
-            visibility: hidden;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
-            pointer-events: none;
-        }
-        #info-icon-container:hover #info-tooltip,
-        #info-tooltip.is-active {
-            visibility: visible;
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            pointer-events: auto;
-        }
-        .text-discord-hover:hover {
-            color: #7289DA;
-        }
+        body{font-family:'Poppins',sans-serif;background-color:#1a1a2e;background-image:linear-gradient(145deg,#16213e 0%,#0f3460 50%,#1a1a2e 100%)}.logo-font{font-family:'Orbitron',sans-serif}.bg-discord{background-color:#5865F2}.text-discord{color:#5865F2}.border-discord{border-color:#5865F2}.glassmorphism{background:rgba(26,26,46,.6);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 32px 0 rgba(0,0,0,.37)}.email-chip{display:inline-flex;align-items:center;background-color:#5865F2;color:#fff;border-radius:9999px;padding:4px 12px;margin:4px;font-size:14px;font-weight:500}.email-chip button{margin-left:8px;background:0 0;border:none;color:#fff;cursor:pointer;font-size:16px;line-height:1;opacity:.7;transition:opacity .2s}.email-chip button:hover{opacity:1}.glow-on-hover{box-shadow:0 0 5px #5865F2,0 0 10px #5865F2,0 0 15px #5865F2;transition:all .3s ease-in-out}.glow-on-hover:hover{box-shadow:0 0 20px #5865F2,0 0 30px #5865F2,0 0 40px #5865F2}.sender-btn{transition:all .3s ease}.sender-btn.active{background-color:#5865F2;color:#fff;box-shadow:0 0 15px rgba(88,101,242,.7)}.sender-btn.inactive{background-color:rgba(79,84,92,.3);color:#b9bbbe}#info-tooltip{visibility:hidden;opacity:0;transform:translateY(10px);transition:opacity .2s ease,transform .2s ease,visibility 0s .2s;pointer-events:none}#info-icon-container:hover #info-tooltip,#info-tooltip.is-active{visibility:visible;opacity:1;transform:translateY(0);transition:opacity .2s ease,transform .2s ease;pointer-events:auto}.text-discord-hover:hover{color:#7289DA}
     </style>
 </head>
 <body class="text-gray-200 antialiased min-h-screen flex items-center justify-center p-4">
@@ -246,10 +412,10 @@
     const sendAsSiteBtn = document.getElementById('send-as-site-btn');
     const infoIconContainer = document.getElementById('info-icon-container');
     const infoTooltip = document.getElementById('info-tooltip');
+    const configContent = document.getElementById('config-content');
     const configOverlay = document.getElementById('config-overlay');
     const guestLimitCounter = document.getElementById('guest-limit-counter');
     const guestSentCount = document.getElementById('guest-sent-count');
-    const gmailConfigBox = document.getElementById('gmail-config-box');
     
     let currentUserId = null;
     let sendAsOption = 'user';
@@ -273,6 +439,9 @@
         currentUserId = null;
         isGuest = false;
         localStorage.removeItem('authToken');
+        // Brišemo i polja za konfiguraciju
+        document.getElementById('gmail-address').value = '';
+        document.getElementById('app-password').value = '';
         window.history.pushState({}, '', window.location.pathname); 
         dashboardScreen.classList.add('hidden');
         loginScreen.classList.remove('hidden');
@@ -291,11 +460,11 @@
         dashboardScreen.classList.remove('hidden');
 
         if (isGuest) {
-            updateSenderChoice('user'); // Gost po defaultu koristi svoj Gmail
+            updateSenderChoice('user');
             guestLimitCounter.classList.remove('hidden');
             document.getElementById('save-config-button').disabled = true;
             document.getElementById('save-config-button').classList.add('opacity-50', 'cursor-not-allowed');
-            gmailConfigBox.classList.add('relative'); // Osigurava da je vidljiv
+            configOverlay.classList.add('hidden');
         } else {
             guestLimitCounter.classList.add('hidden');
             document.getElementById('save-config-button').disabled = false;
@@ -313,7 +482,6 @@
             });
             if (!response.ok) {
                 localStorage.removeItem('authToken');
-                // Ne vraćamo na login ako je token istekao, korisnik može da nastavi kao gost
                 return;
             }
             const user = await response.json();
@@ -336,7 +504,7 @@
             const response = await fetch(`${BACKEND_URL}/api/save-config`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-access-token': token },
-                body: JSON.stringify({ userId: currentUserId, gmailAddress, appPassword })
+                body: JSON.stringify({ gmailAddress, appPassword })
             });
             const result = await response.json();
             showNotification(result.message);
@@ -387,7 +555,7 @@
 
             if (isGuest && sendAsOption === 'site' && response.ok) {
                  const currentCount = parseInt(guestSentCount.textContent, 10);
-                 const sentCount = recipients.split(',').length;
+                 const sentCount = recipientsList.length;
                  guestSentCount.textContent = currentCount + sentCount;
             }
 
@@ -420,7 +588,6 @@
     
     function updateSenderChoice(choice) {
         sendAsOption = choice;
-        const configBox = document.getElementById('gmail-config-box');
         if (choice === 'user') {
             sendAsUserBtn.classList.add('active');
             sendAsUserBtn.classList.remove('inactive');
@@ -432,10 +599,8 @@
             sendAsSiteBtn.classList.remove('inactive');
             sendAsUserBtn.classList.add('inactive');
             sendAsUserBtn.classList.remove('active');
-            if (isGuest) {
-                 configOverlay.classList.remove('hidden');
-                 configOverlay.classList.add('flex');
-            }
+            configOverlay.classList.remove('hidden');
+            configOverlay.classList.add('flex');
         }
     }
 
@@ -460,7 +625,7 @@
 
         if (token) {
             localStorage.setItem('authToken', token);
-            window.history.replaceState({}, document.title, "/");
+            window.history.replaceState({}, document.title, window.location.pathname);
             verifyToken(token);
         } else {
             const storedToken = localStorage.getItem('authToken');
