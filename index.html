@@ -84,10 +84,10 @@
     </div>
 
     <div id="dashboard-screen" class="hidden w-full max-w-4xl">
-        <div class="glassmorphism p-6 sm:p-8 rounded-2xl">
+        <div class="glassmorphism p-4 sm:p-8 rounded-2xl">
             <header class="flex flex-col sm:flex-row justify-between items-center pb-6 border-b border-gray-700/50 mb-6 gap-4">
                 <div class="flex items-center">
-                    <h1 class="text-2xl font-bold logo-font text-white mr-6">SendEmailNow</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold logo-font text-white mr-6">SendEmailNow</h1>
                     <div class="flex items-center">
                         <img id="user-avatar" src="https://placehold.co/48x48/5865F2/ffffff?text=U" alt="Discord Avatar" class="w-10 h-10 rounded-full mr-3 border-2 border-discord">
                         <div>
@@ -108,11 +108,11 @@
                         <div class="space-y-4">
                             <div>
                                 <label for="recipient-input" class="block mb-2 text-sm font-medium text-gray-300">Recipients</label>
-                                <div class="flex gap-2">
+                                <div class="flex flex-col sm:flex-row gap-2">
                                     <div id="recipients-container" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2 flex flex-wrap items-center gap-1 focus-within:ring-2 focus-within:ring-discord focus-within:border-discord transition">
-                                        <input type="email" id="recipient-input" class="bg-transparent text-gray-200 flex-grow p-1 outline-none" placeholder="Add email...">
+                                        <input type="email" id="recipient-input" class="bg-transparent text-gray-200 flex-grow p-1 outline-none" placeholder="Add email and press Enter...">
                                     </div>
-                                    <button id="add-recipient-btn" class="bg-discord h-full px-4 rounded-lg text-white font-bold hover:bg-opacity-90 transition-all">Add</button>
+                                    <button id="add-recipient-btn" class="bg-discord sm:h-full px-4 py-2 rounded-lg text-white font-bold hover:bg-opacity-90 transition-all w-full sm:w-auto">Add</button>
                                 </div>
                             </div>
                             <div>
@@ -196,6 +196,7 @@
     </div>
 
 <script>
+    // Sva JavaScript logika ostaje ista. Ona je nezavisna od dizajna.
     const BACKEND_URL = 'https://api.exxqes.xyz';
     const loginScreen = document.getElementById('login-screen');
     const dashboardScreen = document.getElementById('dashboard-screen');
