@@ -320,8 +320,7 @@
 
             if (isGuest && sendAsOption === 'site' && response.ok) {
                  const currentCount = parseInt(guestSentCount.textContent, 10);
-                 const sentCount = recipientsList.length;
-                 guestSentCount.textContent = currentCount + sentCount;
+                 guestSentCount.textContent = currentCount + recipientsList.length;
             }
 
         } catch (error) {
