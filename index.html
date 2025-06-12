@@ -4,11 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SendEmailNow</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <style>
-        body{font-family:'Poppins',sans-serif;background-color:#1a1a2e;background-image:linear-gradient(145deg,#16213e 0%,#0f3460 50%,#1a1a2e 100%)}.logo-font{font-family:'Orbitron',sans-serif}.bg-discord{background-color:#5865F2}.text-discord{color:#5865F2}.border-discord{border-color:#5865F2}.glassmorphism{background:rgba(26,26,46,.6);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 32px 0 rgba(0,0,0,.37)}.email-chip{display:inline-flex;align-items:center;background-color:#5865F2;color:#fff;border-radius:9999px;padding:4px 12px;margin:4px;font-size:14px;font-weight:500}.email-chip button{margin-left:8px;background:0 0;border:none;color:#fff;cursor:pointer;font-size:16px;line-height:1;opacity:.7;transition:opacity .2s}.email-chip button:hover{opacity:1}.glow-on-hover{box-shadow:0 0 5px #5865F2,0 0 10px #5865F2,0 0 15px #5865F2;transition:all .3s ease-in-out}.glow-on-hover:hover{box-shadow:0 0 20px #5865F2,0 0 30px #5865F2,0 0 40px #5865F2}.sender-btn{transition:all .3s ease}.sender-btn.active{background-color:#5865F2;color:#fff;box-shadow:0 0 15px rgba(88,101,242,.7)}.sender-btn.inactive{background-color:rgba(79,84,92,.3);color:#b9bbbe}#info-tooltip{visibility:hidden;opacity:0;transform:translateY(10px);transition:opacity .2s ease,transform .2s ease,visibility 0s .2s;pointer-events:none}#info-icon-container:hover #info-tooltip,#info-tooltip.is-active{visibility:visible;opacity:1;transform:translateY(0);transition:opacity .2s ease,transform .2s ease;pointer-events:auto}.text-discord-hover:hover{color:#7289DA}
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a2e;
+            background-image: linear-gradient(145deg, #16213e 0%, #0f3460 50%, #1a1a2e 100%);
+        }
+        .logo-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .bg-discord { background-color: #5865F2; }
+        .text-discord { color: #5865F2; }
+        .border-discord { border-color: #5865F2; }
+        .glassmorphism {
+            background: rgba(26, 26, 46, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .email-chip {
+            display: inline-flex; align-items: center; background-color: #5865F2;
+            color: white; border-radius: 9999px; padding: 4px 12px; margin: 4px;
+            font-size: 14px; font-weight: 500;
+        }
+        .email-chip button {
+            margin-left: 8px; background: none; border: none; color: white;
+            cursor: pointer; font-size: 16px; line-height: 1; opacity: 0.7; transition: opacity 0.2s;
+        }
+        .email-chip button:hover { opacity: 1; }
+        .glow-on-hover {
+            box-shadow: 0 0 5px #5865F2, 0 0 10px #5865F2, 0 0 15px #5865F2;
+            transition: all 0.3s ease-in-out;
+        }
+        .glow-on-hover:hover {
+            box-shadow: 0 0 20px #5865F2, 0 0 30px #5865F2, 0 0 40px #5865F2;
+        }
+        .sender-btn {
+            transition: all 0.3s ease;
+        }
+        .sender-btn.active {
+            background-color: #5865F2;
+            color: white;
+            box-shadow: 0 0 15px rgba(88, 101, 242, 0.7);
+        }
+        .sender-btn.inactive {
+            background-color: rgba(79, 84, 92, 0.3);
+            color: #b9bbbe;
+        }
+        /* AŽURIRAN STIL za info tooltip da radi na klik i hover */
+        #info-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
+        }
+        #info-tooltip.is-active {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .text-discord-hover:hover {
+            color: #7289DA;
+        }
     </style>
 </head>
 <body class="text-gray-200 antialiased min-h-screen flex items-center justify-center p-4">
@@ -21,8 +87,6 @@
                 <i class="fab fa-discord mr-3 text-2xl"></i>
                 Login with Discord
             </button>
-            <p class="text-gray-400 my-4">or</p>
-            <button id="guest-button" class="text-discord font-semibold hover:underline">Continue as a guest</button>
         </div>
     </div>
 
@@ -49,9 +113,6 @@
                     <div>
                         <h3 class="text-2xl font-bold mb-4 text-white">Send Email</h3>
                         <div class="space-y-4">
-                            <div id="guest-limit-counter" class="hidden text-center font-semibold p-2 bg-yellow-900/50 border border-yellow-700 rounded-lg text-yellow-300 mb-4">
-                                Guest Site Emails Used Today: <span id="guest-sent-count">0</span>/10
-                            </div>
                             <div>
                                 <label for="recipient-input" class="block mb-2 text-sm font-medium text-gray-300">Recipients</label>
                                 <div class="flex flex-col sm:flex-row gap-2">
@@ -93,7 +154,7 @@
                         </div>
                     </div>
                     
-                    <div id="gmail-config-box" class="relative bg-gray-800/40 p-6 rounded-lg border border-gray-700/50">
+                    <div class="relative bg-gray-800/40 p-6 rounded-lg border border-gray-700/50">
                         <div id="config-overlay" class="absolute inset-0 bg-gray-800/80 backdrop-blur-sm flex-col items-center justify-center text-center p-4 rounded-lg transition-opacity duration-300 hidden">
                             <i class="fas fa-info-circle text-4xl mb-4 text-discord"></i>
                             <p class="font-semibold text-white">Using Site Email</p>
@@ -164,7 +225,6 @@
     const loginScreen = document.getElementById('login-screen');
     const dashboardScreen = document.getElementById('dashboard-screen');
     const loginButton = document.getElementById('login-button');
-    const guestButton = document.getElementById('guest-button');
     const logoutButton = document.getElementById('logout-button');
     const sendButton = document.getElementById('send-button');
     const saveConfigButton = document.getElementById('save-config-button');
@@ -178,98 +238,40 @@
     const sendAsSiteBtn = document.getElementById('send-as-site-btn');
     const infoIconContainer = document.getElementById('info-icon-container');
     const infoTooltip = document.getElementById('info-tooltip');
+    
     const configContent = document.getElementById('config-content');
     const configOverlay = document.getElementById('config-overlay');
-    const guestLimitCounter = document.getElementById('guest-limit-counter');
-    const guestSentCount = document.getElementById('guest-sent-count');
-    
+
     let currentUserId = null;
     let sendAsOption = 'user';
-    let tooltipPinned = false;
-    let isGuest = false;
+    let tooltipPinned = false; // NOVA VARIJABLA za praćenje "pinovanog" stanja
 
     function showNotification(message) {
         notificationMessage.textContent = message;
         notificationModal.classList.remove('hidden');
     }
-
     function hideNotification() {
         notificationModal.classList.add('hidden');
     }
-
     function handleLogin() {
         window.location.href = `${BACKEND_URL}/auth/discord`;
     }
-
     function handleLogout() {
         currentUserId = null;
-        isGuest = false;
-        localStorage.removeItem('authToken');
-        document.getElementById('gmail-address').value = '';
-        document.getElementById('app-password').value = '';
         window.history.pushState({}, '', window.location.pathname); 
         dashboardScreen.classList.add('hidden');
         loginScreen.classList.remove('hidden');
     }
-
-    function showDashboard(user) {
-        currentUserId = user.userId;
-        document.getElementById('user-name').textContent = user.username || "Guest";
-        if (user.avatar && user.avatar !== 'null') {
-            document.getElementById('user-avatar').src = `https://cdn.discordapp.com/avatars/${user.userId}/${user.avatar}.png`;
-        } else {
-            document.getElementById('user-avatar').src = `https://placehold.co/48x48/7289da/ffffff?text=${(user.username || 'G').charAt(0)}`;
-        }
-        
-        loginScreen.classList.add('hidden');
-        dashboardScreen.classList.remove('hidden');
-
-        if (isGuest) {
-            updateSenderChoice('user');
-            guestLimitCounter.classList.remove('hidden');
-            document.getElementById('save-config-button').disabled = true;
-            document.getElementById('save-config-button').classList.add('opacity-50', 'cursor-not-allowed');
-        } else {
-            guestLimitCounter.classList.add('hidden');
-            document.getElementById('save-config-button').disabled = false;
-            document.getElementById('save-config-button').classList.remove('opacity-50', 'cursor-not-allowed');
-            if (user.gmailConfig) {
-                 document.getElementById('gmail-address').value = user.gmailConfig.gmailAddress || '';
-                 document.getElementById('app-password').value = user.gmailConfig.appPassword || '';
-            }
-        }
-    }
-
-    async function verifyToken(token) {
-        try {
-            const response = await fetch(`${BACKEND_URL}/api/verify-token`, {
-                headers: { 'x-access-token': token }
-            });
-            if (!response.ok) {
-                localStorage.removeItem('authToken');
-                return;
-            }
-            const user = await response.json();
-            isGuest = false;
-            showDashboard(user);
-        } catch (e) {
-            console.error("Token verification failed", e);
-            localStorage.removeItem('authToken');
-        }
-    }
-    
     async function saveConfiguration() {
-        if (isGuest) return showNotification("Guests cannot save configurations. Please log in.");
         if (!currentUserId) { showNotification("You must be logged in."); return; }
         const gmailAddress = document.getElementById('gmail-address').value;
         const appPassword = document.getElementById('app-password').value;
         if (!gmailAddress || !appPassword) { showNotification("Please enter both Gmail address and App Password."); return; }
         try {
-            const token = localStorage.getItem('authToken');
             const response = await fetch(`${BACKEND_URL}/api/save-config`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-access-token': token },
-                body: JSON.stringify({ gmailAddress, appPassword })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUserId, gmailAddress, appPassword })
             });
             const result = await response.json();
             showNotification(result.message);
@@ -277,7 +279,6 @@
             showNotification("Error: Could not communicate with the server.");
         }
     }
-
     async function sendEmails() {
         const emailChips = recipientsContainer.querySelectorAll('.email-chip');
         const recipientsList = Array.from(emailChips).map(chip => chip.dataset.email);
@@ -286,48 +287,22 @@
         const subject = document.getElementById('subject').value;
         const message = document.getElementById('message').value;
 
-        if (recipientsList.length === 0 || !subject || !message) {
-            return showNotification("Please fill all fields and add at least one recipient.");
+        if (!currentUserId || recipientsList.length === 0 || !subject || !message) {
+            showNotification("Please fill all fields and add at least one recipient.");
+            return;
         }
-        
-        const payload = { recipients, subject, message, sendAs: sendAsOption, fromName };
-
-        if (isGuest) {
-            payload.userId = 'guest';
-            if (sendAsOption === 'user') {
-                payload.gmailAddress = document.getElementById('gmail-address').value;
-                payload.appPassword = document.getElementById('app-password').value;
-                if (!payload.gmailAddress || !payload.appPassword) {
-                    return showNotification("As a guest, you must enter your Gmail credentials to send from your account.");
-                }
-            }
-        } else {
-            payload.userId = currentUserId;
-        }
-
         try {
-            const token = localStorage.getItem('authToken');
-            const headers = { 'Content-Type': 'application/json' };
-            if (token && !isGuest) headers['x-access-token'] = token;
-
             const response = await fetch(`${BACKEND_URL}/api/send-email`, {
                 method: 'POST',
-                headers,
-                body: JSON.stringify(payload)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUserId, recipients, subject, message, sendAs: sendAsOption, fromName: fromName })
             });
             const result = await response.json();
             showNotification(result.message);
-
-            if (isGuest && sendAsOption === 'site' && response.ok) {
-                 const currentCount = parseInt(guestSentCount.textContent, 10);
-                 guestSentCount.textContent = currentCount + recipientsList.length;
-            }
-
         } catch (error) {
             showNotification("Error: Could not communicate with the server.");
         }
     }
-    
     function createChip(email) {
         if (!email || !email.includes('@')) return;
         const chip = document.createElement('div');
@@ -342,7 +317,6 @@
         chip.appendChild(removeBtn);
         recipientsContainer.insertBefore(chip, recipientInput);
     }
-    
     function addRecipient() {
         const email = recipientInput.value.trim();
         createChip(email);
@@ -357,22 +331,19 @@
             sendAsUserBtn.classList.remove('inactive');
             sendAsSiteBtn.classList.add('inactive');
             sendAsSiteBtn.classList.remove('active');
+            configContent.classList.remove('opacity-20', 'blur-sm', 'pointer-events-none');
             configOverlay.classList.add('hidden');
         } else {
             sendAsSiteBtn.classList.add('active');
             sendAsSiteBtn.classList.remove('inactive');
             sendAsUserBtn.classList.add('inactive');
             sendAsUserBtn.classList.remove('active');
+            configContent.classList.add('opacity-20', 'blur-sm', 'pointer-events-none');
             configOverlay.classList.remove('hidden');
             configOverlay.classList.add('flex');
         }
     }
 
-    guestButton.addEventListener('click', () => {
-        isGuest = true;
-        showDashboard({ userId: 'guest', username: 'Guest' });
-    });
-    
     addRecipientBtn.addEventListener('click', addRecipient);
     recipientInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -385,33 +356,51 @@
 
     window.onload = () => {
         const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-
-        if (token) {
-            localStorage.setItem('authToken', token);
-            window.history.replaceState({}, document.title, window.location.pathname);
-            verifyToken(token);
-        } else {
-            const storedToken = localStorage.getItem('authToken');
-            if (storedToken) {
-                verifyToken(storedToken);
+        const userId = urlParams.get('userId');
+        const username = urlParams.get('username');
+        const avatar = urlParams.get('avatar');
+        if (userId && username) {
+            currentUserId = userId;
+            loginScreen.classList.add('hidden');
+            dashboardScreen.classList.remove('hidden');
+            document.getElementById('user-name').textContent = username;
+            if (avatar && avatar !== 'null') {
+                 document.getElementById('user-avatar').src = `https://cdn.discordapp.com/avatars/${userId}/${avatar}.png`;
             }
         }
     };
-    
     loginButton.addEventListener('click', handleLogin);
     logoutButton.addEventListener('click', handleLogout);
     sendButton.addEventListener('click', sendEmails);
     saveConfigButton.addEventListener('click', saveConfiguration);
     closeModalButton.addEventListener('click', hideNotification);
 
+    // --- NOVA, ROBUSTNA LOGIKA za info ikonicu ---
     infoIconContainer.addEventListener('click', (event) => {
         event.stopPropagation();
-        tooltipPinned = !tooltipPinned;
-        infoTooltip.classList.toggle('is-active', tooltipPinned);
+        tooltipPinned = !tooltipPinned; // Menja "pinovano" stanje
+        if (tooltipPinned) {
+            infoTooltip.classList.add('is-active');
+        } else {
+            infoTooltip.classList.remove('is-active');
+        }
     });
+
+    infoIconContainer.addEventListener('mouseenter', () => {
+        if (!tooltipPinned) { // Prikazuje samo ako nije "pinovano"
+            infoTooltip.classList.add('is-active');
+        }
+    });
+
+    infoIconContainer.addEventListener('mouseleave', () => {
+        if (!tooltipPinned) { // Skriva samo ako nije "pinovano"
+            infoTooltip.classList.remove('is-active');
+        }
+    });
+
+    // Skriva tooltip ako se klikne bilo gde van njega
     document.addEventListener('click', (event) => {
-        if (tooltipPinned && !infoIconContainer.contains(event.target)) {
+        if (!infoIconContainer.contains(event.target) && tooltipPinned) {
             tooltipPinned = false;
             infoTooltip.classList.remove('is-active');
         }
