@@ -156,46 +156,57 @@
                         </div>
                     </div>
                     
-                    <div id="gmail-config-box" class="bg-gray-800/40 p-6 rounded-lg border border-gray-700/50 transition-opacity duration-500">
-                        <h3 class="text-xl font-bold mb-1 text-white">My Gmail Configuration</h3>
-                        <p class="text-sm text-gray-400 mb-4">Enter your credentials to send emails from your own account.</p>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="gmail-address" class="block mb-2 text-sm font-medium text-gray-300">Your Gmail Address</label>
-                                <input type="email" id="gmail-address" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2.5 text-gray-200 focus:ring-discord focus:border-discord transition" placeholder="your.email@gmail.com">
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <label for="app-password" class="text-sm font-medium text-gray-300">Gmail App Password</label>
-                                    <div id="info-icon-container" class="relative">
-                                        <i class="fas fa-info-circle text-gray-400 cursor-pointer hover:text-white transition-colors"></i>
-                                        <div id="info-tooltip" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-3 bg-gray-900 rounded-lg shadow-lg text-xs text-left z-10">
-                                            <p class="font-bold mb-2">How to get an App Password:</p>
-                                            <ol class="list-decimal list-inside space-y-1">
-                                                <li>Go to your <a href="https://myaccount.google.com/security" target="_blank" class="text-discord font-semibold hover:underline">Google Account Security</a> page.</li>
-                                                <li>Make sure 2-Step Verification is ON.</li>
-                                                <li>Click on "App passwords".</li>
-                                                <li>Select "Mail" for the app and "Other (Custom name)" for the device, then generate.</li>
-                                                <li>Copy the 16-character password and paste it here.</li>
-                                            </ol>
+                    <!-- KUTIJA ZA GMAIL KONFIGURACIJU JE SADA RELATIVNA -->
+                    <div id="gmail-config-box" class="relative bg-gray-800/40 p-6 rounded-lg border border-gray-700/50">
+                        <!-- NOVI OVERLAY KOJI SE PRIKAZUJE/SKRIVA -->
+                        <div id="config-overlay" class="absolute inset-0 bg-gray-800/80 backdrop-blur-sm flex-col items-center justify-center text-center p-4 rounded-lg transition-opacity duration-300 hidden">
+                            <i class="fas fa-info-circle text-4xl mb-4 text-discord"></i>
+                            <p class="font-semibold text-white">Using Site Email</p>
+                            <p class="text-sm text-gray-400">No personal configuration needed.</p>
+                        </div>
+                        <!-- KRAJ OVERLAY-A -->
+
+                        <!-- POSTOJEĆI SADRŽAJ SA TRANSITION KLASOM -->
+                        <div id="config-content" class="transition-all duration-300">
+                            <h3 class="text-xl font-bold mb-1 text-white">My Gmail Configuration</h3>
+                            <p class="text-sm text-gray-400 mb-4">Enter your credentials to send emails from your own account.</p>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="gmail-address" class="block mb-2 text-sm font-medium text-gray-300">Your Gmail Address</label>
+                                    <input type="email" id="gmail-address" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2.5 text-gray-200 focus:ring-discord focus:border-discord transition" placeholder="your.email@gmail.com">
+                                </div>
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label for="app-password" class="text-sm font-medium text-gray-300">Gmail App Password</label>
+                                        <div id="info-icon-container" class="relative">
+                                            <i class="fas fa-info-circle text-gray-400 cursor-pointer hover:text-white transition-colors"></i>
+                                            <div id="info-tooltip" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-3 bg-gray-900 rounded-lg shadow-lg text-xs text-left z-10">
+                                                <p class="font-bold mb-2">How to get an App Password:</p>
+                                                <ol class="list-decimal list-inside space-y-1">
+                                                    <li>Go to your <a href="https://myaccount.google.com/security" target="_blank" class="text-discord font-semibold hover:underline">Google Account Security</a> page.</li>
+                                                    <li>Make sure 2-Step Verification is ON.</li>
+                                                    <li>Click on "App passwords".</li>
+                                                    <li>Select "Mail" for the app and "Other (Custom name)" for the device, then generate.</li>
+                                                    <li>Copy the 16-character password and paste it here.</li>
+                                                </ol>
+                                            </div>
                                         </div>
                                     </div>
+                                    <input type="password" id="app-password" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2.5 text-gray-200 focus:ring-discord focus:border-discord transition" placeholder="•••• •••• •••• ••••">
                                 </div>
-                                <input type="password" id="app-password" class="w-full bg-gray-900/40 border border-gray-600/50 rounded-lg p-2.5 text-gray-200 focus:ring-discord focus:border-discord transition" placeholder="•••• •••• •••• ••••">
+                                <button id="save-config-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                                    <i class="fas fa-save mr-2"></i>Save Configuration
+                                </button>
                             </div>
-                            <button id="save-config-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                                <i class="fas fa-save mr-2"></i>Save Configuration
-                            </button>
-                        </div>
-                         <div class="mt-4 p-3 bg-yellow-900/40 border border-yellow-700/50 rounded-lg text-yellow-300 text-xs">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            <strong>Security Warning:</strong> Your data is stored on the server. Never share your main passwords. Only use "App Passwords" generated from your Google account.
+                             <div class="mt-4 p-3 bg-yellow-900/40 border border-yellow-700/50 rounded-lg text-yellow-300 text-xs">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                <strong>Security Warning:</strong> Your data is stored on the server. Never share your main passwords. Only use "App Passwords" generated from your Google account.
+                            </div>
                         </div>
                     </div>
                 </div>
             </main>
 
-            <!-- NOVI FOOTER DEO -->
             <footer class="mt-8 pt-6 border-t border-gray-700/50 flex flex-col items-center justify-center gap-5 text-center">
                 <a href="mailto:contact@exxqes.xyz" class="text-sm text-gray-400 hover:text-white transition-colors">contact@exxqes.xyz</a>
                 <a href="https://discord.gg/u3Gw38bDM8" target="_blank" class="text-4xl text-gray-400 text-discord-hover transition-colors">
@@ -205,7 +216,6 @@
                     &copy; 2025 SendEmailNow. All Rights Reserved.
                 </p>
             </footer>
-            <!-- KRAJ FOOTER DELA -->
 
         </div>
     </div>
@@ -233,10 +243,13 @@
     const addRecipientBtn = document.getElementById('add-recipient-btn');
     const sendAsUserBtn = document.getElementById('send-as-user-btn');
     const sendAsSiteBtn = document.getElementById('send-as-site-btn');
-    const gmailConfigBox = document.getElementById('gmail-config-box');
     const infoIconContainer = document.getElementById('info-icon-container');
     const infoTooltip = document.getElementById('info-tooltip');
     
+    // NOVI ELEMENTI za kontrolu prikaza
+    const configContent = document.getElementById('config-content');
+    const configOverlay = document.getElementById('config-overlay');
+
     let currentUserId = null;
     let sendAsOption = 'user';
 
@@ -317,6 +330,8 @@
         recipientInput.value = '';
         recipientInput.focus();
     }
+    
+    // AŽURIRANA LOGIKA
     function updateSenderChoice(choice) {
         sendAsOption = choice;
         if (choice === 'user') {
@@ -324,13 +339,19 @@
             sendAsUserBtn.classList.remove('inactive');
             sendAsSiteBtn.classList.add('inactive');
             sendAsSiteBtn.classList.remove('active');
-            gmailConfigBox.classList.remove('opacity-0', 'pointer-events-none');
+            
+            configContent.classList.remove('opacity-20', 'blur-sm', 'pointer-events-none');
+            configOverlay.classList.add('hidden');
+
         } else {
             sendAsSiteBtn.classList.add('active');
             sendAsSiteBtn.classList.remove('inactive');
             sendAsUserBtn.classList.add('inactive');
             sendAsUserBtn.classList.remove('active');
-            gmailConfigBox.classList.add('opacity-0', 'pointer-events-none');
+
+            configContent.classList.add('opacity-20', 'blur-sm', 'pointer-events-none');
+            configOverlay.classList.remove('hidden');
+            configOverlay.classList.add('flex'); // Važno da bi se flex centriranje primenilo
         }
     }
 
